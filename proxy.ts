@@ -15,6 +15,8 @@ export function proxy(request: NextRequest) {
     // Redirect to login if accessing a protected route without a token
     if (isProtectedRoute && !token) {
         const loginUrl = new URL('/login', request.url);
+
+        loginUrl.searchParams.set('reason', 'expired');
         // Can optionally pass a next/returnTo parameter here
         return NextResponse.redirect(loginUrl);
     }
@@ -24,7 +26,7 @@ export function proxy(request: NextRequest) {
     if (isAuthRoute && token) {
         return NextResponse.redirect(new URL('/dashboard', request.url));
     }
-    
+
     // Default redirect to login for root route if not authenticated
     if (pathname === '/') {
         if (token) {

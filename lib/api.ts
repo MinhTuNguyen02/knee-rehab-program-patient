@@ -1,4 +1,5 @@
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
+import { redirect } from 'next/navigation'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -22,44 +23,52 @@ export async function fetchAPI<T>(
     const cookieStore = await cookies();
     const token = cookieStore.get('jwt')?.value;
 
-    const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-    };
+    const reqHeaders = new Headers(options.headers);
+    reqHeaders.set('Content-Type', 'application/json');
 
-    // If options.headers is provided, we need to merge it carefully
-    if (options.headers) {
-        if (options.headers instanceof Headers) {
-            options.headers.forEach((value, key) => {
-                headers[key] = value;
-            });
-        } else if (Array.isArray(options.headers)) {
-            options.headers.forEach(([key, value]) => {
-                headers[key] = value;
-            });
-        } else {
-            Object.assign(headers, options.headers);
+    if (token) {
+        reqHeaders.set('Authorization', `Bearer ${token}`);
+    }
+
+    const headerStore = await headers();
+    const forwardedFor = headerStore.get('x-forwarded-for');
+    const realIp = headerStore.get('x-real-ip');
+
+    if (forwardedFor) reqHeaders.set('x-forwarded-for', forwardedFor);
+    if (realIp) reqHeaders.set('x-real-ip', realIp);
+
+    let response: Response;
+
+    try {
+        response = await fetch(`${API_URL}${endpoint}`, {
+            ...options,
+            headers: reqHeaders,
+        });
+
+    } catch (error: any) {
+        return {
+            error: {
+                code: 'NETWORK_ERROR',
+                message: error.message || 'Failed to connect to the server',
+            }
+        };
+    }
+
+    if (response.status === 401) {
+        if (!endpoint.includes('/login')) {
+            cookieStore.delete('jwt');
+            redirect('/login?reason=expired');
         }
     }
 
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+    if (response.status === 204) {
+        return { data: {} as T };
     }
 
     try {
-        const response = await fetch(`${API_URL}${endpoint}`, {
-            ...options,
-            headers,
-        });
-
-        // Some endpoints might return empty body (e.g., 204 No Content)
-        if (response.status === 204) {
-            return { data: {} as T };
-        }
-
         const data = await response.json();
-        
+
         if (!response.ok) {
-            // Transform non-2xx responses into our standard error format if not already
             if (!data.error) {
                 return {
                     error: {
@@ -72,11 +81,11 @@ export async function fetchAPI<T>(
         }
 
         return data;
-    } catch (error: any) {
+    } catch (error) {
         return {
             error: {
-                code: 'NETWORK_ERROR',
-                message: error.message || 'Failed to connect to the server',
+                code: 'PARSE_ERROR',
+                message: 'Invalid JSON response from server',
             }
         };
     }
