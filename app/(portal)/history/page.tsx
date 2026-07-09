@@ -52,10 +52,10 @@ export default function HistoryPage() {
     }
 
     const getZoneColor = (zone: string) => {
-        switch (zone) {
-            case 'Green': return 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 border-green-200 dark:border-green-800';
-            case 'Amber': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800';
-            case 'Red': return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 border-red-200 dark:border-red-800';
+        switch (zone?.toLowerCase()) {
+            case 'green': return 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 border-green-200 dark:border-green-800';
+            case 'amber': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800';
+            case 'red': return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 border-red-200 dark:border-red-800';
             default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
         }
     };
@@ -106,7 +106,7 @@ export default function HistoryPage() {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${getZoneColor(assessment.zone)}`}>
-                                                {assessment.zone}
+                                                {assessment.zone ? assessment.zone.charAt(0).toUpperCase() + assessment.zone.slice(1).toLowerCase() : ''}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-gray-500 dark:text-gray-400 hidden sm:table-cell">

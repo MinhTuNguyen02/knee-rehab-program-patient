@@ -1,7 +1,8 @@
 import { getPatientProfile } from '@/app/actions/patient';
 import Link from 'next/link';
 import { logout } from '@/app/actions/auth';
-import { Bell, UserCircle } from 'lucide-react';
+import { Bell } from 'lucide-react';
+import UserMenu from '@/components/layout/UserMenu';
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
     const response = await getPatientProfile();
@@ -11,38 +12,36 @@ export default async function PortalLayout({ children }: { children: React.React
         <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-400 ease-in-out var-zone-bg">
             <header className="sticky top-0 z-40 w-full border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
                 <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                         <Link href="/dashboard" className="flex items-center gap-2">
-                            {/* Placeholder Logo */}
-                            <div className="w-8 h-8 rounded bg-primary text-primary-foreground flex items-center justify-center font-bold">
+                            <div className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center font-bold shadow-sm active:scale-95 transition-transform">
                                 K
                             </div>
-                            <span className="font-bold text-lg tracking-tight hidden sm:inline-block">KRPS</span>
+                            <span className="font-bold text-lg tracking-tight hidden sm:inline-block text-primary">KRPS</span>
                         </Link>
+                        {patient && (
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 animate-fade-in">
+                                Hi, {patient.firstName}
+                            </span>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-4">
                         <Link href="/chat" className="relative p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors">
                             <span className="sr-only">Notifications</span>
-                            <Bell className="w-6 h-6" />
+                            <Bell className="w-5.5 h-5.5" />
                             {/* Unread badge placeholder */}
-                            <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                            <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm">
+                                99
                             </span>
                         </Link>
 
                         <div className="flex items-center gap-3 pl-4 border-l border-gray-200 dark:border-gray-800">
-                            <div className="hidden sm:flex flex-col items-end">
-                                <span className="text-sm font-medium leading-none">
-                                    {patient ? `${patient.firstName} ${patient.lastName}` : 'Loading...'}
-                                </span>
-                            </div>
-
-                            {/* Simple Profile Link for now */}
-                            <Link href="/profile" className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
-                                <UserCircle className="w-8 h-8" />
-                            </Link>
+                            {patient ? (
+                                <UserMenu firstName={patient.firstName} lastName={patient.lastName} email={patient.email} />
+                            ) : (
+                                <div className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
+                            )}
                         </div>
                     </div>
                 </div>

@@ -1,18 +1,17 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useState, useTransition, Suspense } from 'react';
 import { login } from '@/app/actions/auth';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Eye, EyeClosed } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
-export default function LoginPage() {
+function LoginForm() {
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
 
     const searchParams = useSearchParams();
     const [isPending, startTransition] = useTransition();
-    const router = useRouter();
 
     useEffect(() => {
         if (searchParams.get('reason') === 'expired') {
@@ -35,66 +34,101 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center p-4 bg-gray-50 dark:bg-gray-900">
-            <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
-                <div className="p-8">
-                    <div className="text-center mb-8">
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">KRPS Patient Portal</h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Sign in to view your knee assessment results</p>
+        <div className="flex min-h-[100dvh] items-center justify-center p-4 bg-background">
+            <div className="w-full max-w-md space-y-8 rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
+                <div className="text-center">
+                    <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                        KRPS Patient Portal
+                    </h1>
+                    <p className="mt-2 text-sm text-slate-655 dark:text-slate-400">
+                        Sign in to view your knee assessment results
+                    </p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {error && (
+                        <div className="p-3 text-sm text-red-655 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-xl border border-red-200 dark:border-red-900/50">
+                            {error}
+                        </div>
+                    )}
+
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="email">
+                                Email Address
+                            </label>
+                            <div className="relative">
+                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                                    <Mail className="w-4.5 h-4.5" />
+                                </div>
+                                <input
+                                    id="email"
+                                    name="email"
+                                    type="email"
+                                    required
+                                    className="block w-full rounded-lg border-0 py-2.5 pl-10 pr-3 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary dark:bg-slate-800 dark:text-white dark:ring-slate-700 sm:text-sm sm:leading-6"
+                                    placeholder="you@example.com"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="password">
+                                    Password
+                                </label>
+                            </div>
+                            <div className="relative">
+                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                                    <Lock className="w-4.5 h-4.5" />
+                                </div>
+                                <input
+                                    id="password"
+                                    name="password"
+                                    type={showPassword ? 'text' : 'password'}
+                                    required
+                                    className="block w-full rounded-lg border-0 py-2.5 pl-10 pr-10 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary dark:bg-slate-800 dark:text-white dark:ring-slate-700 sm:text-sm sm:leading-6"
+                                    placeholder="••••••••"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-655 dark:hover:text-slate-300"
+                                    tabIndex={-1}
+                                >
+                                    {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end">
+                            <Link href="/forgot-password" className="text-sm font-medium text-primary hover:text-primary-hover dark:text-primary dark:hover:text-primary-hover">
+                                Forgot password?
+                            </Link>
+                        </div>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        {error && (
-                            <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400 rounded-md border border-red-200 dark:border-red-800">
-                                {error}
-                            </div>
-                        )}
-
-                        <div className="space-y-1">
-                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-                            <input
-                                name="email"
-                                type="email"
-                                required
-                                className="w-full h-11 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white"
-                                placeholder="you@example.com"
-                            />
-                        </div>
-
-                        <div className="space-y-1 relative">
-                            <div className="flex justify-between">
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
-                                <Link href="/forgot-password" className="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400">
-                                    Forgot password?
-                                </Link>
-                            </div>
-                            <input
-                                name="password"
-                                type={showPassword ? "text" : "password"}
-                                required
-                                className="w-full h-11 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white"
-                                placeholder="••••••••"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                                tabIndex={-1}
-                            >
-                                {showPassword ? <Eye size={18} /> : <EyeClosed size={18} />}
-                            </button>
-                        </div>
-
-                        <button
-                            type="submit"
-                            disabled={isPending}
-                            className="w-full h-11 flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                            {isPending ? 'Signing in...' : 'Sign In'}
-                        </button>
-                    </form>
-                </div>
+                    <button
+                        type="submit"
+                        disabled={isPending}
+                        className="flex w-full justify-center rounded-lg bg-primary px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-70 disabled:cursor-not-allowed transition-colors active:scale-[0.98]"
+                    >
+                        {isPending ? 'Logging in...' : 'Login'}
+                    </button>
+                </form>
             </div>
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex min-h-[100dvh] items-center justify-center p-4 bg-background">
+                <div className="text-slate-500">Loading login...</div>
+            </div>
+        }>
+            <LoginForm />
+        </Suspense>
     );
 }
