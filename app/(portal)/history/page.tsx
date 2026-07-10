@@ -1,55 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { getAssessments, AssessmentResponse } from '@/app/actions/patient';
+import { useAssessmentHistory } from '@/hooks/useAssessmentHistory';
 import { AlertCircle } from 'lucide-react';
 
 export default function HistoryPage() {
-    const [assessments, setAssessments] = useState<AssessmentResponse[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [hasMore, setHasMore] = useState(false);
-    const [nextCursor, setNextCursor] = useState<string | null>(null);
-    const [loadingMore, setLoadingMore] = useState(false);
-
-    useEffect(() => {
-        loadInitialData();
-    }, []);
-
-    async function loadInitialData() {
-        setLoading(true);
-        setError(null);
-        try {
-            const result = await getAssessments();
-            if (result.error) throw new Error(result.error.message);
-
-            setAssessments(result.data?.data || []);
-            setHasMore(result.data?.hasMore || false);
-            setNextCursor(result.data?.nextCursor || null);
-        } catch (err: any) {
-            setError(err.message || 'Failed to load history');
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    async function loadMore() {
-        if (!nextCursor || loadingMore) return;
-
-        setLoadingMore(true);
-        try {
-            const result = await getAssessments(nextCursor);
-            if (result.error) throw new Error(result.error.message);
-
-            setAssessments((prev) => [...prev, ...(result.data?.data || [])]);
-            setHasMore(result.data?.hasMore || false);
-            setNextCursor(result.data?.nextCursor || null);
-        } catch (err: any) {
-            console.error('Failed to load more:', err);
-        } finally {
-            setLoadingMore(false);
-        }
-    }
+    const {
+        assessments,
+        loading,
+        loadingMore,
+        error,
+        hasMore,
+        loadMore
+    } = useAssessmentHistory();
 
     const getZoneColor = (zone: string) => {
         switch (zone?.toLowerCase()) {
@@ -66,6 +28,12 @@ export default function HistoryPage() {
                 <h1 className="text-2xl font-bold tracking-tight mb-2">Score History</h1>
                 <p className="text-muted-foreground">View your past knee assessments and track your progress over time.</p>
             </div>
+
+            {error && (
+                <div className="p-4 bg-red-50 border border-red-200 text-red-850 rounded-xl font-bold" role="alert">
+                    ⚠️ {error}
+                </div>
+            )}
 
             <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 rounded-lg p-4 flex gap-3 text-blue-800 dark:text-blue-300 text-sm">
                 <AlertCircle className="w-5 h-5 shrink-0" />
@@ -110,10 +78,10 @@ export default function HistoryPage() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-gray-500 dark:text-gray-400 hidden sm:table-cell">
-                                            {assessment.painScore}/40
+                                            {assessment.pain}/10
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-gray-500 dark:text-gray-400 hidden sm:table-cell">
-                                            {assessment.functionScore}/60
+                                            {assessment.functionScore}/10
                                         </td>
                                     </tr>
                                 ))
@@ -129,7 +97,7 @@ export default function HistoryPage() {
                             disabled={loadingMore}
                             className="inline-flex justify-center items-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
                         >
-                            {loadingMore ? 'Loading...' : 'Load Older Assessments'}
+                            {loadingMore ? 'Loading more...' : 'Load More'}
                         </button>
                     </div>
                 )}

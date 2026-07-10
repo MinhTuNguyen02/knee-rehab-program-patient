@@ -9,7 +9,7 @@ export default async function DashboardPage() {
 
     // Fetch the 5 most recent assessments to show the trend
     const assessmentsResponse = await getAssessments(undefined, 5);
-    const assessments = assessmentsResponse.data?.data || [];
+    const assessments = assessmentsResponse.data || [];
 
     // Reverse to chronological order (oldest to newest)
     const trendData = [...assessments].reverse();

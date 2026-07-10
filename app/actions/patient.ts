@@ -25,8 +25,8 @@ export async function getPatientProfile() {
 export interface AssessmentResponse {
     id: string;
     score: number;
-    zone: 'Green' | 'Amber' | 'Red';
-    painScore: number;
+    zone: string;
+    pain: number;
     functionScore: number;
     createdAt: string;
 }
@@ -36,7 +36,7 @@ export async function getAssessments(before?: string, limit: number = 10) {
     if (before) {
         url += `&before=${encodeURIComponent(before)}`;
     }
-    const response = await fetchAPI<{ data: AssessmentResponse[]; hasMore: boolean; nextCursor: string | null }>(url);
+    const response = await fetchAPI<AssessmentResponse[]>(url);
     return response;
 }
 

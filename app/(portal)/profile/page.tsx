@@ -1,31 +1,15 @@
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
-import { getPatientProfile, updatePatientProfile, updateNotificationPreferences, PatientProfile } from '@/app/actions/patient';
+import { useState, useTransition } from 'react';
+import { usePatientProfile } from '@/hooks/usePatientProfile';
+import { updatePatientProfile, updateNotificationPreferences } from '@/app/actions/patient';
 import { logout } from '@/app/actions/auth';
 import Link from 'next/link';
 
 export default function ProfilePage() {
-    const [profile, setProfile] = useState<PatientProfile | null>(null);
-    const [loading, setLoading] = useState(true);
+    const { profile, loading, error: profileError, mutate } = usePatientProfile();
     const [isPending, startTransition] = useTransition();
     const [status, setStatus] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
-
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    async function loadData() {
-        try {
-            const result = await getPatientProfile();
-            if (result.error) throw new Error(result.error.message);
-            if (result.data) setProfile(result.data);
-        } catch (err: any) {
-            setStatus({ type: 'error', message: err.message || 'Failed to load profile' });
-        } finally {
-            setLoading(false);
-        }
-    }
 
     async function handleProfileSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -44,8 +28,8 @@ export default function ProfilePage() {
                 setStatus({ type: 'error', message: result.error.message });
             } else {
                 setStatus({ type: 'success', message: 'Profile updated successfully' });
-                // Re-fetch to update UI fully
-                loadData();
+                // Update local profile cache
+                mutate(data);
             }
         });
     }
@@ -57,13 +41,12 @@ export default function ProfilePage() {
                 setStatus({ type: 'error', message: result.error.message });
             } else {
                 // Update local state to reflect change immediately instead of full reload for speed
-                setProfile(prev => prev ? {
-                    ...prev,
+                mutate({
                     notificationPrefs: {
-                        ...(prev.notificationPrefs || {}),
+                        ...(profile?.notificationPrefs || {}),
                         [key]: checked
                     }
-                } : null);
+                });
             }
         });
     }
@@ -72,8 +55,8 @@ export default function ProfilePage() {
         return <div className="p-8 text-center text-gray-500">Loading profile...</div>;
     }
 
-    if (!profile) {
-        return <div className="p-8 text-center text-red-500">Failed to load profile data.</div>;
+    if (profileError || !profile) {
+        return <div className="p-8 text-center text-red-500">{profileError || 'Failed to load profile data.'}</div>;
     }
 
     return (
