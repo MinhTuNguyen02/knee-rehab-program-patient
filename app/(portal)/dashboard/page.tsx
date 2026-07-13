@@ -3,6 +3,7 @@
 import { usePatientProfile } from '@/hooks/usePatientProfile';
 import { useAssessmentHistory } from '@/hooks/useAssessmentHistory';
 import Link from 'next/link';
+import { formatDate } from '@/lib/utils';
 import { ArrowRight, MessageCircle, UserCircle, Activity, ChevronRight, Calendar, AlertCircle } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -73,10 +74,11 @@ export default function DashboardPage() {
     }
 
     // SVG Line Chart generation
-    const chartHeight = 120;
+    const chartHeight = 150;
     const chartWidth = 500;
     const paddingX = 40;
-    const paddingY = 20;
+    const paddingYTop = 30;
+    const paddingYBottom = 30;
 
     let pointsPath = '';
     let areaPath = '';
@@ -84,16 +86,21 @@ export default function DashboardPage() {
 
     if (trendData.length > 1) {
         const scores = trendData.map(d => d.score);
-        const minScore = Math.max(0, Math.min(...scores) - 10);
-        const maxScore = Math.min(100, Math.max(...scores) + 10);
+        let minScore = Math.min(...scores);
+        let maxScore = Math.max(...scores);
+        // Ensure there is at least a difference of 2 points between min and max for display aesthetics
+        if (maxScore - minScore < 2) {
+            minScore = Math.max(-10, minScore - 1);
+            maxScore = Math.min(10, maxScore + 1);
+        }
         const range = maxScore - minScore || 1;
 
         chartPoints = trendData.map((d, index) => {
             const x = paddingX + (index / (trendData.length - 1)) * (chartWidth - paddingX * 2);
             // Invert Y axis for SVG (0,0 is top-left)
-            const y = chartHeight - paddingY - ((d.score - minScore) / range) * (chartHeight - paddingY * 2);
-            const dateObj = new Date(d.createdAt);
-            const dateStr = dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+            const yAxisHeight = chartHeight - paddingYTop - paddingYBottom;
+            const y = chartHeight - paddingYBottom - ((d.score - minScore) / range) * yAxisHeight;
+            const dateStr = formatDate(d.createdAt);
             return { x, y, score: d.score, dateStr };
         });
 
@@ -102,16 +109,13 @@ export default function DashboardPage() {
         }, '');
 
         // Generate area path that extends to bottom of chart
-        areaPath = `${pointsPath} L ${chartPoints[chartPoints.length - 1].x} ${chartHeight - paddingY} L ${chartPoints[0].x} ${chartHeight - paddingY} Z`;
+        areaPath = `${pointsPath} L ${chartPoints[chartPoints.length - 1].x} ${chartHeight - paddingYBottom} L ${chartPoints[0].x} ${chartHeight - paddingYBottom} Z`;
     }
 
     return (
         <div className="pb-12 max-w-6xl mx-auto">
             {/* Header Greeting */}
             <div className="flex flex-col gap-1.5 mb-8">
-                <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-                    Hi, {patient?.firstName || 'there'} 👋
-                </h1>
                 <p className="text-gray-500 dark:text-gray-400 text-sm md:text-base">
                     Welcome back! Here is a summary of your knee rehabilitation progress.
                 </p>
@@ -191,10 +195,10 @@ export default function DashboardPage() {
 
                         {trendData.length > 1 ? (
                             <Link href="/history" className="block group">
-                                <div className="relative w-full overflow-x-auto overflow-y-hidden">
+                                <div className="relative w-full overflow-x-auto overflow-y-visible py-2">
                                     <svg
                                         viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-                                        className="w-full h-auto min-w-[320px] transition-transform duration-300 group-hover:scale-[1.01]"
+                                        className="w-full h-auto min-w-[320px] transition-transform duration-300 group-hover:scale-[1.01] overflow-visible"
                                     >
                                         <defs>
                                             <linearGradient id="chart-gradient" x1="0" y1="0" x2="0" y2="1">
@@ -209,8 +213,8 @@ export default function DashboardPage() {
                                         )}
 
                                         {/* Grid lines (horizontal helper lines) */}
-                                        <line x1={paddingX} y1={paddingY} x2={chartWidth - paddingX} y2={paddingY} stroke="currentColor" className="text-gray-100 dark:text-gray-800/40" strokeDasharray="4 4" />
-                                        <line x1={paddingX} y1={chartHeight - paddingY} x2={chartWidth - paddingX} y2={chartHeight - paddingY} stroke="currentColor" className="text-gray-100 dark:text-gray-800/40" />
+                                        <line x1={paddingX} y1={paddingYTop} x2={chartWidth - paddingX} y2={paddingYTop} stroke="currentColor" className="text-gray-100 dark:text-gray-800/40" strokeDasharray="4 4" />
+                                        <line x1={paddingX} y1={chartHeight - paddingYBottom} x2={chartWidth - paddingX} y2={chartHeight - paddingYBottom} stroke="currentColor" className="text-gray-100 dark:text-gray-800/40" />
 
                                         {/* Chart Line */}
                                         {pointsPath && (
@@ -271,7 +275,7 @@ export default function DashboardPage() {
                                                 {/* X Axis Label */}
                                                 <text
                                                     x={p.x}
-                                                    y={chartHeight - 4}
+                                                    y={chartHeight - 10}
                                                     textAnchor="middle"
                                                     className="text-[10px] font-medium fill-gray-400 dark:fill-gray-500"
                                                 >

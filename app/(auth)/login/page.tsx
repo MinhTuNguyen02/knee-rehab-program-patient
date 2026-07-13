@@ -70,7 +70,7 @@ function LoginForm() {
                         const lowercaseMsg = msg.toLowerCase();
                         if (lowercaseMsg.includes('email')) {
                             backendFieldErrors.email = msg;
-                        } else if (lowercaseMsg.includes('password') || lowercaseMsg.includes('credentials')) {
+                        } else if (lowercaseMsg.includes('password')) {
                             backendFieldErrors.password = msg;
                         } else {
                             genericError = msg;
@@ -111,7 +111,7 @@ function LoginForm() {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {error && (
-                        <div className="p-3 text-sm text-red-655 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-xl border border-red-200 dark:border-red-900/50">
+                        <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-xl border border-red-200 dark:border-red-900/50">
                             {error}
                         </div>
                     )}
@@ -129,11 +129,10 @@ function LoginForm() {
                                     id="email"
                                     name="email"
                                     type="email"
-                                    className={`block w-full rounded-lg border-0 py-2.5 pl-10 pr-3 text-slate-900 ring-1 ring-inset placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary dark:bg-slate-800 dark:text-white sm:text-sm sm:leading-6 ${
-                                        fieldErrors.email 
-                                            ? 'ring-red-300 focus:ring-red-500 dark:ring-red-900/50' 
+                                    className={`block w-full rounded-lg border-0 py-2.5 pl-10 pr-3 text-slate-900 ring-1 ring-inset placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary dark:bg-slate-800 dark:text-white sm:text-sm sm:leading-6 ${fieldErrors.email
+                                            ? 'ring-red-300 focus:ring-red-500 dark:ring-red-900/50'
                                             : 'ring-slate-300 focus:ring-primary dark:ring-slate-700'
-                                    }`}
+                                        }`}
                                     placeholder="you@example.com"
                                 />
                             </div>
@@ -158,11 +157,10 @@ function LoginForm() {
                                     id="password"
                                     name="password"
                                     type={showPassword ? 'text' : 'password'}
-                                    className={`block w-full rounded-lg border-0 py-2.5 pl-10 pr-10 text-slate-900 ring-1 ring-inset placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary dark:bg-slate-800 dark:text-white sm:text-sm sm:leading-6 ${
-                                        fieldErrors.password 
-                                            ? 'ring-red-300 focus:ring-red-500 dark:ring-red-900/50' 
+                                    className={`block w-full rounded-lg border-0 py-2.5 pl-10 pr-10 text-slate-900 ring-1 ring-inset placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary dark:bg-slate-800 dark:text-white sm:text-sm sm:leading-6 ${fieldErrors.password
+                                            ? 'ring-red-300 focus:ring-red-500 dark:ring-red-900/50'
                                             : 'ring-slate-300 focus:ring-primary dark:ring-slate-700'
-                                    }`}
+                                        }`}
                                     placeholder="••••••••"
                                 />
                                 <button

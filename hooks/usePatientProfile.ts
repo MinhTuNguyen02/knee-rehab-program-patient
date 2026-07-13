@@ -6,7 +6,13 @@ export interface PatientProfile {
     firstName: string;
     lastName: string;
     mobile?: string;
+    age?: number;
+    gender?: string;
+    kneeSide?: string;
+    consentAccepted: boolean;
     notificationPrefs?: Record<string, boolean>;
+    forcePasswordChange: boolean;
+    createdAt: string;
     latestAssessment?: {
         id: string;
         score: number;

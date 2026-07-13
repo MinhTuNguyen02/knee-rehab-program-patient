@@ -2,6 +2,8 @@
 
 import { useAssessmentHistory } from '@/hooks/useAssessmentHistory';
 import { AlertCircle } from 'lucide-react';
+import { ZoneBadge } from '@/components/ui/ZoneBadge';
+import { formatDate } from '@/lib/utils';
 
 export default function HistoryPage() {
     const {
@@ -12,15 +14,6 @@ export default function HistoryPage() {
         hasMore,
         loadMore
     } = useAssessmentHistory();
-
-    const getZoneColor = (zone: string) => {
-        switch (zone?.toLowerCase()) {
-            case 'green': return 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 border-green-200 dark:border-green-800';
-            case 'amber': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800';
-            case 'red': return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 border-red-200 dark:border-red-800';
-            default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
-        }
-    };
 
     return (
         <div className="space-y-6 pb-20 sm:pb-0">
@@ -67,15 +60,13 @@ export default function HistoryPage() {
                                 assessments.map((assessment) => (
                                     <tr key={assessment.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-100">
-                                            {new Date(assessment.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                            {formatDate(assessment.createdAt)}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap font-bold text-gray-900 dark:text-gray-100">
                                             {assessment.score.toFixed(1)}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${getZoneColor(assessment.zone)}`}>
-                                                {assessment.zone ? assessment.zone.charAt(0).toUpperCase() + assessment.zone.slice(1).toLowerCase() : ''}
-                                            </span>
+                                            <ZoneBadge zone={assessment.zone} />
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-gray-500 dark:text-gray-400 hidden sm:table-cell">
                                             {assessment.pain}/10
