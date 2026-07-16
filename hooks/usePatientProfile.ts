@@ -30,8 +30,7 @@ export function usePatientProfile() {
             if (!res.ok) {
                 throw new Error(json.error?.message || 'Failed to load profile');
             }
-            // Backend returns { data: PatientProfile } or PatientProfile
-            return json.data || json;
+            return json.data;
         },
         {
             revalidateOnFocus: false,

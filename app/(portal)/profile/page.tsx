@@ -1,52 +1,68 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useRef, useEffect } from 'react';
 import { usePatientProfile } from '@/hooks/usePatientProfile';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useForm, Controller } from 'react-hook-form';
+import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
+import toast from 'react-hot-toast';
+import { ArrowLeft } from 'lucide-react';
 
 export default function ProfilePage() {
     const { profile, loading, error: profileError, mutate } = usePatientProfile();
     const [isPending, startTransition] = useTransition();
-    const [status, setStatus] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
+    const [isEdit, setIsEdit] = useState(false);
     const [fieldErrors, setFieldErrors] = useState<{ firstName?: string; lastName?: string; mobile?: string }>({});
     const router = useRouter();
+    const formRef = useRef<HTMLFormElement>(null);
 
-    async function handleProfileSubmit(e: React.FormEvent<HTMLFormElement>) {
-        e.preventDefault();
-        setStatus(null);
+    const { register, handleSubmit, control, reset, formState: { errors: hookErrors } } = useForm({
+        defaultValues: {
+            firstName: '',
+            lastName: '',
+            mobile: '',
+        }
+    });
+
+    useEffect(() => {
+        if (profile) {
+            reset({
+                firstName: profile.firstName || '',
+                lastName: profile.lastName || '',
+                mobile: profile.mobile || '',
+            });
+        }
+    }, [profile, reset]);
+
+    const getFieldError = (fieldName: 'firstName' | 'lastName' | 'mobile') => {
+        return hookErrors[fieldName]?.message || fieldErrors[fieldName];
+    };
+
+    const getKneeSideLabel = (side?: string) => {
+        if (!side) return '';
+        const s = side.toUpperCase();
+        if (s === 'R') return 'Right';
+        if (s === 'L') return 'Left';
+        if (s === 'B') return 'Both';
+        return side;
+    };
+
+    const inputBaseClass = (fieldName: 'firstName' | 'lastName' | 'mobile') => {
+        const hasError = !!getFieldError(fieldName);
+        const errorClasses = hasError
+            ? 'border-red-300 focus:ring-red-500 dark:border-red-900/50'
+            : 'border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary';
+        const stateClasses = isEdit
+            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white'
+            : 'bg-gray-55 dark:bg-gray-800/60 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-800/80 cursor-not-allowed';
+        return `w-full h-11 px-3 py-2 border rounded-xl shadow-sm focus:outline-none focus:ring-2 transition-all ${errorClasses} ${stateClasses}`;
+    };
+
+    async function handleProfileSubmit(data: { firstName: string; lastName: string; mobile: string }) {
         setFieldErrors({});
 
-        const formData = new FormData(e.currentTarget);
-        const data = {
-            firstName: (formData.get('firstName') as string || '').trim(),
-            lastName: (formData.get('lastName') as string || '').trim(),
-            mobile: (formData.get('mobile') as string || '').trim(),
-        };
-
-        let hasError = false;
-        const newFieldErrors: typeof fieldErrors = {};
-
-        if (!data.firstName) {
-            newFieldErrors.firstName = 'First name is required';
-            hasError = true;
-        }
-
-        if (!data.lastName) {
-            newFieldErrors.lastName = 'Last name is required';
-            hasError = true;
-        }
-
-        if (!data.mobile) {
-            newFieldErrors.mobile = 'Mobile number is required';
-            hasError = true;
-        }
-
-        if (hasError) {
-            setFieldErrors(newFieldErrors);
-            return;
-        }
-        
         startTransition(async () => {
             try {
                 const res = await fetch('/api/patient/me', {
@@ -81,14 +97,17 @@ export default function ProfilePage() {
                         setFieldErrors(backendFieldErrors);
                     }
                     if (genericError) {
-                        setStatus({ type: 'error', message: genericError });
+                        toast.error(genericError);
+                    } else {
+                        toast.error('Please correct the validation errors.');
                     }
                 } else {
-                    setStatus({ type: 'success', message: 'Profile updated successfully' });
+                    toast.success('Profile updated successfully');
                     mutate(data);
+                    setIsEdit(false);
                 }
             } catch (err: any) {
-                setStatus({ type: 'error', message: 'Failed to update profile' });
+                toast.error('Failed to update profile');
             }
         });
     }
@@ -103,8 +122,9 @@ export default function ProfilePage() {
                 });
                 const json = await res.json();
                 if (!res.ok) {
-                    setStatus({ type: 'error', message: json.error?.message || json.message || 'Failed to update preferences' });
+                    toast.error(json.error?.message || json.message || 'Failed to update preferences');
                 } else {
+                    toast.success('Notification preference updated');
                     mutate({
                         notificationPrefs: {
                             ...(profile?.notificationPrefs || {}),
@@ -113,7 +133,7 @@ export default function ProfilePage() {
                     });
                 }
             } catch (err: any) {
-                setStatus({ type: 'error', message: 'Failed to update preferences' });
+                toast.error('Failed to update preferences');
             }
         });
     }
@@ -128,62 +148,51 @@ export default function ProfilePage() {
 
     return (
         <div className="space-y-6 max-w-2xl mx-auto pb-20 sm:pb-0">
-            <div>
+            <div className="space-y-4">
+                <Link
+                    href="/dashboard"
+                    className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors"
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to Dashboard
+                </Link>
                 <h1 className="text-2xl font-bold tracking-tight mb-2">Your Profile</h1>
                 <p className="text-muted-foreground">Manage your personal information and preferences.</p>
             </div>
-
-            {status && (
-                <div className={`p-4 rounded-md text-sm border ${
-                    status.type === 'success' 
-                    ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' 
-                    : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'
-                }`}>
-                    {status.message}
-                </div>
-            )}
 
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
                 <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Personal Information</h2>
                 </div>
-                
-                <form onSubmit={handleProfileSubmit} className="p-6 space-y-5">
+
+                <form ref={formRef} onSubmit={handleSubmit(handleProfileSubmit)} className="p-6 space-y-5">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div className="space-y-1">
                             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">First Name</label>
-                            <input 
-                                name="firstName" 
-                                type="text" 
-                                defaultValue={profile.firstName}
-                                className={`w-full h-11 px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white ${
-                                    fieldErrors.firstName 
-                                        ? 'border-red-300 focus:ring-red-500' 
-                                        : 'border-gray-300 dark:border-gray-600'
-                                }`}
+                            <input
+                                {...register('firstName', { required: 'First name is required' })}
+                                type="text"
+                                disabled={!isEdit}
+                                className={inputBaseClass('firstName')}
                             />
-                            {fieldErrors.firstName && (
-                                <p className="text-xs text-red-600 dark:text-red-450 mt-1" role="alert">
-                                    {fieldErrors.firstName}
+                            {getFieldError('firstName') && (
+                                <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold" role="alert">
+                                    {getFieldError('firstName')}
                                 </p>
                             )}
                         </div>
-                        
+
                         <div className="space-y-1">
                             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Last Name</label>
-                            <input 
-                                name="lastName" 
-                                type="text" 
-                                defaultValue={profile.lastName}
-                                className={`w-full h-11 px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white ${
-                                    fieldErrors.lastName 
-                                        ? 'border-red-300 focus:ring-red-500' 
-                                        : 'border-gray-300 dark:border-gray-600'
-                                }`}
+                            <input
+                                {...register('lastName', { required: 'Last name is required' })}
+                                type="text"
+                                disabled={!isEdit}
+                                className={inputBaseClass('lastName')}
                             />
-                            {fieldErrors.lastName && (
-                                <p className="text-xs text-red-600 dark:text-red-450 mt-1" role="alert">
-                                    {fieldErrors.lastName}
+                            {getFieldError('lastName') && (
+                                <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold" role="alert">
+                                    {getFieldError('lastName')}
                                 </p>
                             )}
                         </div>
@@ -191,41 +200,118 @@ export default function ProfilePage() {
 
                     <div className="space-y-1">
                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Email Address (Cannot be changed)</label>
-                        <input 
-                            type="email" 
+                        <input
+                            type="email"
                             defaultValue={profile.email}
                             disabled
-                            className="w-full h-11 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-500 cursor-not-allowed"
+                            className="w-full h-11 px-3 py-2 border border-gray-200 dark:border-gray-800 rounded-xl bg-gray-50 dark:bg-gray-800/60 text-gray-400 dark:text-gray-500 cursor-not-allowed"
                         />
                     </div>
 
                     <div className="space-y-1">
                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Mobile Number</label>
-                        <input 
-                            name="mobile" 
-                            type="tel" 
-                            defaultValue={profile.mobile || ''}
-                            className={`w-full h-11 px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white ${
-                                    fieldErrors.mobile 
-                                        ? 'border-red-300 focus:ring-red-500' 
-                                        : 'border-gray-300 dark:border-gray-600'
-                                }`}
+                        <Controller
+                            name="mobile"
+                            control={control}
+                            rules={{
+                                required: 'Please enter your mobile phone number',
+                                validate: (value) =>
+                                    !value || isValidPhoneNumber(value) || 'Please enter a valid phone number',
+                            }}
+                            render={({ field: { onChange, value } }) => (
+                                <PhoneInput
+                                    international
+                                    defaultCountry="AU"
+                                    placeholder="Enter phone number"
+                                    disabled={!isEdit}
+                                    value={value}
+                                    onChange={(val) => onChange(val || '')}
+                                    id="mobile"
+                                    className={`${inputBaseClass('mobile')} phone-input-custom`}
+                                />
+                            )}
                         />
-                        {fieldErrors.mobile && (
-                            <p className="text-xs text-red-600 dark:text-red-450 mt-1" role="alert">
-                                {fieldErrors.mobile}
+                        {getFieldError('mobile') && (
+                            <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold" role="alert">
+                                {getFieldError('mobile')}
                             </p>
                         )}
                     </div>
 
-                    <div className="pt-4">
-                        <button 
-                            type="submit" 
-                            disabled={isPending}
-                            className="w-full sm:w-auto h-11 inline-flex justify-center items-center py-2 px-6 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
-                        >
-                            {isPending ? 'Saving...' : 'Save Changes'}
-                        </button>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+
+                        <div className="space-y-1">
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Age</label>
+                            <input
+                                type="number"
+                                defaultValue={profile.age}
+                                disabled
+                                className="w-full h-11 px-3 py-2 border border-gray-250 dark:border-gray-800 rounded-xl bg-gray-50 dark:bg-gray-800/60 text-gray-400 dark:text-gray-505 cursor-not-allowed"
+                            />
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Gender</label>
+                            <input
+                                type="text"
+                                defaultValue={profile.gender}
+                                disabled
+                                className="w-full h-11 px-3 py-2 border border-gray-250 dark:border-gray-800 rounded-xl bg-gray-50 dark:bg-gray-800/60 text-gray-400 dark:text-gray-550 cursor-not-allowed"
+                            />
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Knee Side</label>
+                            <input
+                                type="text"
+                                defaultValue={getKneeSideLabel(profile.kneeSide)}
+                                disabled
+                                className="w-full h-11 px-3 py-2 border border-gray-250 dark:border-gray-800 rounded-xl bg-gray-50 dark:bg-gray-800/60 text-gray-400 dark:text-gray-550 cursor-not-allowed"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3 pt-4">
+                        {!isEdit ? (
+                            <button
+                                key="edit-btn"
+                                type="button"
+                                onClick={() => {
+                                    setIsEdit(true);
+                                    setFieldErrors({});
+                                }}
+                                className="w-full sm:w-auto h-11 inline-flex justify-center items-center py-2 px-6 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary active:scale-[0.98] transition-all"
+                            >
+                                Edit Profile
+                            </button>
+                        ) : (
+                            <>
+                                <button
+                                    key="save-btn"
+                                    type="submit"
+                                    disabled={isPending}
+                                    className="w-full sm:w-auto h-11 inline-flex justify-center items-center py-2 px-6 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-all"
+                                >
+                                    {isPending ? 'Saving...' : 'Save Changes'}
+                                </button>
+                                <button
+                                    key="cancel-btn"
+                                    type="button"
+                                    onClick={() => {
+                                        setIsEdit(false);
+                                        setFieldErrors({});
+                                        reset({
+                                            firstName: profile.firstName || '',
+                                            lastName: profile.lastName || '',
+                                            mobile: profile.mobile || '',
+                                        });
+                                    }}
+                                    className="w-full sm:w-auto h-11 inline-flex justify-center items-center py-2 px-6 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm text-sm font-bold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-55 dark:hover:bg-gray-750 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary active:scale-[0.98] transition-all"
+                                >
+                                    Cancel
+                                </button>
+                            </>
+                        )}
                     </div>
                 </form>
             </div>
@@ -234,56 +320,56 @@ export default function ProfilePage() {
                 <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Notification Preferences</h2>
                 </div>
-                
+
                 <div className="p-6 space-y-6">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="font-medium text-gray-900 dark:text-white">Assessment Reminders</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Receive an email when it's time to check your knee.</p>
+                            <p className="font-medium text-gray-900 dark:text-white">Reassessment Reminders</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Receive an email when it's time to check your knee (14 and 30 days).</p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
-                            <input 
-                                type="checkbox" 
+                            <input
+                                type="checkbox"
                                 className="sr-only peer"
-                                checked={profile.notificationPrefs?.assessmentReminders !== false}
-                                onChange={(e) => handleNotificationToggle('assessmentReminders', e.target.checked)}
+                                checked={profile.notificationPrefs?.reassessReminder !== false}
+                                onChange={(e) => handleNotificationToggle('reassessReminder', e.target.checked)}
                                 disabled={isPending}
                             />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 dark:peer-focus:ring-primary/20 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
                         </label>
                     </div>
-                    
+
                     <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-6">
                         <div>
-                            <p className="font-medium text-gray-900 dark:text-white">Email Notifications</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Receive general updates and clinic messages via email.</p>
+                            <p className="font-medium text-gray-900 dark:text-white">Educational Guidance</p>
+                            <p className="text-sm text-gray-550 dark:text-gray-400">Receive helpful articles and exercises for your knee.</p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
-                            <input 
-                                type="checkbox" 
+                            <input
+                                type="checkbox"
                                 className="sr-only peer"
-                                checked={profile.notificationPrefs?.emailNotifications !== false}
-                                onChange={(e) => handleNotificationToggle('emailNotifications', e.target.checked)}
+                                checked={profile.notificationPrefs?.kneeGuidance !== false}
+                                onChange={(e) => handleNotificationToggle('kneeGuidance', e.target.checked)}
                                 disabled={isPending}
                             />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 dark:peer-focus:ring-primary/20 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
                         </label>
                     </div>
-                    
+
                     <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-6">
                         <div>
-                            <p className="font-medium text-gray-900 dark:text-white">SMS Notifications</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Receive text messages for urgent updates.</p>
+                            <p className="font-medium text-gray-900 dark:text-white">Follow-up Contact</p>
+                            <p className="text-sm text-gray-550 dark:text-gray-400">Allow our clinic to contact you regarding your assessment.</p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
-                            <input 
-                                type="checkbox" 
+                            <input
+                                type="checkbox"
                                 className="sr-only peer"
-                                checked={profile.notificationPrefs?.smsNotifications !== false}
-                                onChange={(e) => handleNotificationToggle('smsNotifications', e.target.checked)}
+                                checked={profile.notificationPrefs?.followUpKRP !== false}
+                                onChange={(e) => handleNotificationToggle('followUpKRP', e.target.checked)}
                                 disabled={isPending}
                             />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 dark:peer-focus:ring-primary/20 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
                         </label>
                     </div>
                 </div>
@@ -294,14 +380,14 @@ export default function ProfilePage() {
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Account Management</h2>
                 </div>
                 <div className="p-6 flex flex-col sm:flex-row gap-4">
-                    <Link 
+                    <Link
                         href="/change-password"
-                        className="inline-flex w-full sm:w-auto justify-center items-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                        className="inline-flex w-full sm:w-auto justify-center items-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm text-sm font-bold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-55 dark:hover:bg-gray-750 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
                     >
                         Change Password
                     </Link>
-                    
-                    <form 
+
+                    <form
                         onSubmit={async (e) => {
                             e.preventDefault();
                             try {
@@ -310,10 +396,10 @@ export default function ProfilePage() {
                                 // ignore
                             }
                             router.push('/login');
-                        }} 
+                        }}
                         className="w-full sm:w-auto"
                     >
-                        <button 
+                        <button
                             type="submit"
                             className="inline-flex w-full sm:w-auto justify-center items-center py-2 px-4 border border-red-300 dark:border-red-800/50 rounded-md shadow-sm text-sm font-medium text-red-700 dark:text-red-400 bg-white dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
                         >

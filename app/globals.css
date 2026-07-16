@@ -51,15 +51,21 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  --animate-fade-in: fadeIn 0.5s ease-out forwards;
+  --animate-fade-in-up: fadeInUp 0.5s ease-out forwards;
 }
 
 :root {
-  --background: #f5f8fa; /* Soft off-white with slight blue/teal tint */
-  --foreground: #1e293b; /* Softer dark gray slate-800 */
-  --primary: #007a87; /* Soft premium teal */
+  --background: #f5f8fa;
+  /* Soft off-white with slight blue/teal tint */
+  --foreground: #1e293b;
+  /* Softer dark gray slate-800 */
+  --primary: #007a87;
+  /* Soft premium teal */
   --primary-hover: #006670;
   --primary-active: #00525a;
-  
+
   --zone-green: #10B981;
   --zone-amber: #F59E0B;
   --zone-red: #EF4444;
@@ -133,10 +139,83 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
   html {
     @apply font-sans;
+  }
+}
+
+/* ─── Phone Input (react-phone-number-input) ─── */
+.phone-input-custom .PhoneInputCountry {
+  margin-right: 0.5rem;
+  padding-right: 0.5rem;
+  border-right: 1px solid rgba(156, 163, 175, 0.3);
+  display: flex;
+  align-items: center;
+}
+
+.phone-input-custom .PhoneInputCountryIcon {
+  width: 24px;
+  height: 16px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.phone-input-custom .PhoneInputCountrySelectArrow {
+  margin-left: 0.25rem;
+  opacity: 0.5;
+}
+
+.phone-input-custom .PhoneInputInput {
+  flex: 1;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  font-size: 0.875rem;
+  height: 100%;
+  padding: 0 !important;
+}
+
+.phone-input-custom .PhoneInputInput:focus {
+  box-shadow: none !important;
+}
+
+.phone-input-custom select {
+  cursor: pointer;
+}
+
+.phone-input-custom select:disabled {
+  cursor: not-allowed;
+}
+
+@keyframes drawLine {
+  from {
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-draw-line {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: drawLine 1.3s ease-out forwards;
+  }
+}
+
+@keyframes dotFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
   }
 }

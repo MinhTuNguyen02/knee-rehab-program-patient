@@ -1,16 +1,65 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { usePatientProfile } from '@/hooks/usePatientProfile';
 import { useAssessmentHistory } from '@/hooks/useAssessmentHistory';
 import Link from 'next/link';
 import { formatDate } from '@/lib/utils';
 import { ArrowRight, MessageCircle, UserCircle, Activity, ChevronRight, Calendar, AlertCircle } from 'lucide-react';
+import MiniTrendChart from '@/components/charts/MiniTrendChart';
 
 export default function DashboardPage() {
     const { profile: patient, loading: profileLoading, error: profileError } = usePatientProfile();
     const { assessments, loading: historyLoading, error: historyError } = useAssessmentHistory();
 
+    const [displayScore, setDisplayScore] = useState(0);
+    const [isScoreDone, setIsScoreDone] = useState(false);
+
+    // check reduced motion
+    const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
     const latest = patient?.latestAssessment;
+
+    useEffect(() => {
+        const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+        setPrefersReducedMotion(mediaQuery.matches);
+
+        const listener = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+        mediaQuery.addEventListener('change', listener);
+        return () => mediaQuery.removeEventListener('change', listener);
+    }, []);
+
+    useEffect(() => {
+        if (!latest) return;
+
+        if (prefersReducedMotion) {
+            setDisplayScore(latest.score);
+            setIsScoreDone(true);
+            return;
+        }
+
+        let startTimestamp: number | null = null;
+        const duration = 800; // ~800ms
+        const targetScore = latest.score;
+
+        const step = (timestamp: number) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+
+            // ease-out cubic
+            const easeOutProgress = 1 - Math.pow(1 - progress, 3);
+            setDisplayScore(easeOutProgress * targetScore);
+
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            } else {
+                setDisplayScore(targetScore);
+                setIsScoreDone(true);
+            }
+        };
+
+        window.requestAnimationFrame(step);
+    }, [latest?.score, prefersReducedMotion]);
 
     // Take the 5 most recent assessments to show the trend
     const recentAssessments = assessments.slice(0, 5);
@@ -73,44 +122,7 @@ export default function DashboardPage() {
         );
     }
 
-    // SVG Line Chart generation
-    const chartHeight = 150;
-    const chartWidth = 500;
-    const paddingX = 40;
-    const paddingYTop = 30;
-    const paddingYBottom = 30;
 
-    let pointsPath = '';
-    let areaPath = '';
-    let chartPoints: { x: number; y: number; score: number; dateStr: string }[] = [];
-
-    if (trendData.length > 1) {
-        const scores = trendData.map(d => d.score);
-        let minScore = Math.min(...scores);
-        let maxScore = Math.max(...scores);
-        // Ensure there is at least a difference of 2 points between min and max for display aesthetics
-        if (maxScore - minScore < 2) {
-            minScore = Math.max(-10, minScore - 1);
-            maxScore = Math.min(10, maxScore + 1);
-        }
-        const range = maxScore - minScore || 1;
-
-        chartPoints = trendData.map((d, index) => {
-            const x = paddingX + (index / (trendData.length - 1)) * (chartWidth - paddingX * 2);
-            // Invert Y axis for SVG (0,0 is top-left)
-            const yAxisHeight = chartHeight - paddingYTop - paddingYBottom;
-            const y = chartHeight - paddingYBottom - ((d.score - minScore) / range) * yAxisHeight;
-            const dateStr = formatDate(d.createdAt);
-            return { x, y, score: d.score, dateStr };
-        });
-
-        pointsPath = chartPoints.reduce((acc, p, i) => {
-            return acc + (i === 0 ? `M ${p.x} ${p.y}` : ` L ${p.x} ${p.y}`);
-        }, '');
-
-        // Generate area path that extends to bottom of chart
-        areaPath = `${pointsPath} L ${chartPoints[chartPoints.length - 1].x} ${chartHeight - paddingYBottom} L ${chartPoints[0].x} ${chartHeight - paddingYBottom} Z`;
-    }
 
     return (
         <div className="pb-12 max-w-6xl mx-auto">
@@ -138,9 +150,13 @@ export default function DashboardPage() {
                                     {latest ? (
                                         <div className="flex items-baseline gap-4 mt-2">
                                             <span className={`text-6xl font-black tracking-tighter ${zoneStyles.color}`}>
-                                                {latest.score.toFixed(1)}
+                                                {displayScore.toFixed(1)}
                                             </span>
-                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${zoneStyles.badgeBg}`}>
+                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${zoneStyles.badgeBg} ${prefersReducedMotion
+                                                ? 'opacity-100 scale-100 translate-y-0'
+                                                : `transition-all duration-500 ease-out transform ${isScoreDone ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-90 translate-y-2'
+                                                }`
+                                                }`}>
                                                 <span className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: zoneStyles.hex }} />
                                                 {zoneStyles.badgeText} Zone
                                             </span>
@@ -156,14 +172,14 @@ export default function DashboardPage() {
                                 {latest && (
                                     <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                                         <Calendar className="w-4 h-4 text-gray-400" />
-                                        <span>Last assessed: {new Date(latest.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                        <span>Last assessed: {formatDate(latest.createdAt)}</span>
                                     </div>
                                 )}
                             </div>
 
                             <div className="w-full md:w-auto pt-2 md:pt-0">
                                 <a
-                                    href={process.env.NEXT_PUBLIC_ASSESS_URL || 'http://localhost:3000'}
+                                    href={process.env.NEXT_PUBLIC_ASSESS_URL}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex w-full md:w-auto justify-center items-center py-3.5 px-6 border border-transparent rounded-2xl shadow-sm text-sm font-bold text-white bg-primary hover:bg-primary-hover active:bg-primary-active transition-all transform active:scale-[0.98] duration-150"
@@ -187,7 +203,7 @@ export default function DashboardPage() {
                                 <p className="text-xs text-gray-400 dark:text-gray-500">Track your last 5 assessment scores</p>
                             </div>
                             {trendData.length > 1 && (
-                                <Link href="/history" className="text-xs font-semibold text-primary hover:text-primary-hover flex items-center gap-1">
+                                <Link href="/history" className="text-sm md:text-base font-semibold text-primary hover:text-primary-hover flex items-center gap-1">
                                     Full history <ChevronRight className="w-4.5 h-4.5" />
                                 </Link>
                             )}
@@ -195,96 +211,7 @@ export default function DashboardPage() {
 
                         {trendData.length > 1 ? (
                             <Link href="/history" className="block group">
-                                <div className="relative w-full overflow-x-auto overflow-y-visible py-2">
-                                    <svg
-                                        viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-                                        className="w-full h-auto min-w-[320px] transition-transform duration-300 group-hover:scale-[1.01] overflow-visible"
-                                    >
-                                        <defs>
-                                            <linearGradient id="chart-gradient" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.25" />
-                                                <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.0" />
-                                            </linearGradient>
-                                        </defs>
-
-                                        {/* Chart Area Under the Line */}
-                                        {areaPath && (
-                                            <path d={areaPath} fill="url(#chart-gradient)" />
-                                        )}
-
-                                        {/* Grid lines (horizontal helper lines) */}
-                                        <line x1={paddingX} y1={paddingYTop} x2={chartWidth - paddingX} y2={paddingYTop} stroke="currentColor" className="text-gray-100 dark:text-gray-800/40" strokeDasharray="4 4" />
-                                        <line x1={paddingX} y1={chartHeight - paddingYBottom} x2={chartWidth - paddingX} y2={chartHeight - paddingYBottom} stroke="currentColor" className="text-gray-100 dark:text-gray-800/40" />
-
-                                        {/* Chart Line */}
-                                        {pointsPath && (
-                                            <path
-                                                d={pointsPath}
-                                                fill="none"
-                                                stroke="var(--primary)"
-                                                strokeWidth="3"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                            />
-                                        )}
-
-                                        {/* Interactive Dots & Text Labels */}
-                                        {chartPoints.map((p, index) => (
-                                            <g key={index} className="transition-all duration-300">
-                                                {/* Tooltip background on hover */}
-                                                <rect
-                                                    x={p.x - 18}
-                                                    y={p.y - 25}
-                                                    width="36"
-                                                    height="18"
-                                                    rx="4"
-                                                    fill="var(--foreground)"
-                                                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                                />
-                                                {/* Tooltip score value */}
-                                                <text
-                                                    x={p.x}
-                                                    y={p.y - 13}
-                                                    textAnchor="middle"
-                                                    className="text-[9px] font-bold fill-background opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                                >
-                                                    {p.score.toFixed(0)}
-                                                </text>
-
-                                                {/* Outer Glow Ring on Point */}
-                                                <circle
-                                                    cx={p.x}
-                                                    cy={p.y}
-                                                    r="7"
-                                                    fill="var(--primary)"
-                                                    opacity="0"
-                                                    className="group-hover:opacity-20 transition-opacity duration-200 cursor-pointer"
-                                                />
-
-                                                {/* Core point dot */}
-                                                <circle
-                                                    cx={p.x}
-                                                    cy={p.y}
-                                                    r="4"
-                                                    fill="var(--background)"
-                                                    stroke="var(--primary)"
-                                                    strokeWidth="2.5"
-                                                    className="cursor-pointer"
-                                                />
-
-                                                {/* X Axis Label */}
-                                                <text
-                                                    x={p.x}
-                                                    y={chartHeight - 10}
-                                                    textAnchor="middle"
-                                                    className="text-[10px] font-medium fill-gray-400 dark:fill-gray-500"
-                                                >
-                                                    {p.dateStr}
-                                                </text>
-                                            </g>
-                                        ))}
-                                    </svg>
-                                </div>
+                                <MiniTrendChart assessments={recentAssessments} />
                             </Link>
                         ) : (
                             <div className="flex flex-col items-center justify-center py-8 text-center bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800">
@@ -319,7 +246,7 @@ export default function DashboardPage() {
                                         View Full History
                                     </span>
                                     <span className="text-xs text-gray-400 dark:text-gray-500">
-                                        Check all past BORIS reports
+                                        Check all past KRPS reports
                                     </span>
                                 </div>
                             </div>

@@ -21,6 +21,8 @@ export const metadata: Metadata = {
   description: "Patient portal for knee rehabilitation progress tracking",
 };
 
+import { Toaster } from "react-hot-toast";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -33,6 +35,7 @@ export default function RootLayout({
     >
       <body className={`${outfit.className} min-h-full flex flex-col bg-background text-foreground`}>
         {children}
+        <Toaster position="top-right" />
       </body>
     </html>
   );
