@@ -24,6 +24,11 @@ export function proxy(request: NextRequest) {
     // Redirect to dashboard if accessing auth routes with a token
     // (except change-password which is protected)
     if (isAuthRoute && token) {
+        if (request.nextUrl.searchParams.get('reason') === 'expired') {
+            const response = NextResponse.next();
+            response.cookies.delete('jwt');
+            return response;
+        }
         return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { formatDate } from '@/lib/utils';
 import { ArrowRight, MessageCircle, UserCircle, Activity, ChevronRight, Calendar, AlertCircle } from 'lucide-react';
 import MiniTrendChart from '@/components/charts/MiniTrendChart';
+import OnboardingWalkthrough from '@/components/features/OnboardingWalkthrough';
 
 export default function DashboardPage() {
     const { profile: patient, loading: profileLoading, error: profileError } = usePatientProfile();
@@ -28,6 +29,24 @@ export default function DashboardPage() {
         mediaQuery.addEventListener('change', listener);
         return () => mediaQuery.removeEventListener('change', listener);
     }, []);
+
+    useEffect(() => {
+        if (!latest || !latest.zone) {
+            document.body.className = document.body.className.replace(/\bzone-\w+/g, '');
+            return;
+        }
+
+        const zoneClass = `zone-${latest.zone.toLowerCase()}`;
+
+        // Remove any old zone classes
+        document.body.className = document.body.className.replace(/\bzone-\w+/g, '');
+        // Add new zone class
+        document.body.classList.add(zoneClass);
+
+        return () => {
+            document.body.classList.remove(zoneClass);
+        };
+    }, [latest]);
 
     useEffect(() => {
         if (!latest) return;
@@ -126,6 +145,7 @@ export default function DashboardPage() {
 
     return (
         <div className="pb-12 max-w-6xl mx-auto">
+            <OnboardingWalkthrough />
             {/* Header Greeting */}
             <div className="flex flex-col gap-1.5 mb-8">
                 <p className="text-gray-500 dark:text-gray-400 text-sm md:text-base">
@@ -140,7 +160,7 @@ export default function DashboardPage() {
                 <div className="lg:col-span-2 space-y-6">
 
                     {/* Summary Card */}
-                    <div className={`rounded-3xl border ${zoneStyles.bg} p-6 md:p-8 shadow-sm transition-all duration-300 relative overflow-hidden bg-white dark:bg-gray-900`}>
+                    <div className={`rounded-3xl border ${zoneStyles.bg} p-6 md:p-8 shadow-sm transition-all duration-300 relative overflow-hidden bg-white dark:bg-gray-900 zone-summary-card`}>
                         <div className="relative z-10 flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
                             <div className="space-y-4">
                                 <div>
@@ -182,7 +202,7 @@ export default function DashboardPage() {
                                     href={process.env.NEXT_PUBLIC_ASSESS_URL}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex w-full md:w-auto justify-center items-center py-3.5 px-6 border border-transparent rounded-2xl shadow-sm text-sm font-bold text-white bg-primary hover:bg-primary-hover active:bg-primary-active transition-all transform active:scale-[0.98] duration-150"
+                                    className="inline-flex w-full md:w-auto justify-center items-center py-3.5 px-6 border border-transparent rounded-2xl shadow-sm text-sm font-bold text-white bg-primary hover:bg-primary-hover active:bg-primary-active transition-all transform active:scale-[0.98] duration-150 zone-summary-cta"
                                 >
                                     {latest ? 'Retake Assessment' : 'Take First Assessment'}
                                 </a>
@@ -228,7 +248,7 @@ export default function DashboardPage() {
 
                 {/* Right Column (Quick Links & Actions) */}
                 <div className="space-y-4">
-                    <h3 className="text-xs font-bold tracking-wider text-gray-400 dark:text-gray-500 uppercase px-1">
+                    <h3 className="text-xs font-bold tracking-wider text-gray-500 dark:text-gray-500 uppercase px-1">
                         Quick Links & Support
                     </h3>
 

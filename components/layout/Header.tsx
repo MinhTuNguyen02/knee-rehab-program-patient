@@ -28,7 +28,7 @@ export default function Header({ initialPatient }: { initialPatient: any }) {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <Link href="/chat" className="relative p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors">
+                    <Link href="/" className="relative p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors">
                         <span className="sr-only">Notifications</span>
                         <Bell className="w-5.5 h-5.5" />
                         {/* Unread badge placeholder */}

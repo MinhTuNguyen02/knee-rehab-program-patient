@@ -8,7 +8,7 @@ import { useForm, Controller } from 'react-hook-form';
 import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import toast from 'react-hot-toast';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, LogOut } from 'lucide-react';
 
 export default function ProfilePage() {
     const { profile, loading, error: profileError, mutate } = usePatientProfile();
@@ -323,9 +323,9 @@ export default function ProfilePage() {
 
                 <div className="p-6 space-y-6">
                     <div className="flex items-center justify-between">
-                        <div>
+                        <div className="mr-6">
                             <p className="font-medium text-gray-900 dark:text-white">Reassessment Reminders</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Receive an email when it's time to check your knee (14 and 30 days).</p>
+                            <p className="text-sm text-gray-550 dark:text-gray-400">Receive an email when it's time to check your knee (14 and 30 days).</p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
                             <input
@@ -340,7 +340,7 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-6">
-                        <div>
+                        <div className="mr-6">
                             <p className="font-medium text-gray-900 dark:text-white">Educational Guidance</p>
                             <p className="text-sm text-gray-550 dark:text-gray-400">Receive helpful articles and exercises for your knee.</p>
                         </div>
@@ -357,7 +357,7 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-6">
-                        <div>
+                        <div className="mr-6">
                             <p className="font-medium text-gray-900 dark:text-white">Follow-up Contact</p>
                             <p className="text-sm text-gray-550 dark:text-gray-400">Allow our clinic to contact you regarding your assessment.</p>
                         </div>
@@ -401,9 +401,12 @@ export default function ProfilePage() {
                     >
                         <button
                             type="submit"
-                            className="inline-flex w-full sm:w-auto justify-center items-center py-2 px-4 border border-red-300 dark:border-red-800/50 rounded-md shadow-sm text-sm font-medium text-red-700 dark:text-red-400 bg-white dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                            disabled={isPending}
+                            className="inline-flex gap-2 w-full sm:w-auto justify-center items-center py-2 px-4 border border-red-300 dark:border-red-800/50 rounded-md shadow-sm text-sm font-medium text-red-700 dark:text-red-400 bg-white dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
                         >
-                            Sign Out
+                            <LogOut className="w-4 h-4" />
+                            <span>Logout</span>
+
                         </button>
                     </form>
                 </div>

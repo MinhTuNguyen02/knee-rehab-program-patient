@@ -219,3 +219,97 @@
     opacity: 1;
   }
 }
+
+/*Zone-based Theming*/
+/* Light Mode Variables */
+body.zone-green {
+  --zone-bg: #E8F5E9;
+  --zone-color: #1B5E20;
+  --zone-border: #C8E6C9;
+}
+
+body.zone-amber {
+  --zone-bg: #FFF8E1;
+  --zone-color: #B75300;
+  --zone-border: #FFE082;
+}
+
+body.zone-red {
+  --zone-bg: #FFEBEE;
+  --zone-color: #C62828;
+  --zone-border: #FFCDD2;
+}
+
+/* Dark Mode Variables */
+.dark body.zone-green {
+  --zone-bg: #062e1e;
+  --zone-color: #34d399;
+  --zone-border: #064e3b;
+}
+
+.dark body.zone-amber {
+  --zone-bg: #2e1c0c;
+  --zone-color: #fbbf24;
+  --zone-border: #78350f;
+}
+
+.dark body.zone-red {
+  --zone-bg: #2d0b0b;
+  --zone-color: #f87171;
+  --zone-border: #7f1d1d;
+}
+
+/* Application Rules */
+body[class*="zone-"] {
+  transition: background-color 0.5s ease;
+}
+
+body[class*="zone-"] .var-zone-bg {
+  /* Mix 25% of the zone color with 75% of the neutral background color */
+  background-color: color-mix(in srgb, var(--zone-bg) 25%, #f8fafc 75%) !important;
+  transition: background-color 0.5s ease;
+}
+
+.dark body[class*="zone-"] .var-zone-bg {
+  background-color: color-mix(in srgb, var(--zone-bg) 18%, #030712 82%) !important;
+}
+
+body[class*="zone-"] header {
+  /* Translucent glassy header blended with zone colors */
+  background-color: color-mix(in srgb, var(--zone-bg) 30%, rgba(255, 255, 255, 0.75) 70%) !important;
+  border-bottom-color: var(--zone-border) !important;
+  border-bottom-width: 1.5px !important;
+  transition: background-color 0.5s ease, border-color 0.5s ease;
+}
+
+.dark body[class*="zone-"] header {
+  background-color: color-mix(in srgb, var(--zone-bg) 25%, rgba(15, 23, 42, 0.75) 75%) !important;
+}
+
+body[class*="zone-"] .zone-summary-card {
+  border-color: var(--zone-border) !important;
+  background-color: color-mix(in srgb, var(--zone-bg) 35%, #ffffff 65%) !important;
+  box-shadow: 0 10px 25px -5px color-mix(in srgb, var(--zone-border) 25%, transparent 75%) !important;
+  transition: border-color 0.5s ease, background-color 0.5s ease, box-shadow 0.5s ease;
+}
+
+.dark body[class*="zone-"] .zone-summary-card {
+  background-color: color-mix(in srgb, var(--zone-bg) 25%, #0f172a 75%) !important;
+}
+
+body[class*="zone-"] .zone-summary-cta {
+  background-color: var(--zone-color) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--zone-color) 35%, transparent 65%) !important;
+  transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+body[class*="zone-"] .zone-summary-cta:hover {
+  background-color: color-mix(in srgb, var(--zone-color) 85%, #000000 15%) !important;
+  box-shadow: 0 6px 20px 0 color-mix(in srgb, var(--zone-color) 50%, transparent 50%) !important;
+}
+
+.dark body[class*="zone-"] .zone-summary-cta:hover {
+  background-color: color-mix(in srgb, var(--zone-color) 85%, #ffffff 15%) !important;
+}
