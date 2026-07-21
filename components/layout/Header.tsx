@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
-import { Bell } from 'lucide-react';
 import UserMenu from '@/components/layout/UserMenu';
+import NotificationDropdown from '@/components/layout/NotificationDropdown';
 import { usePatientProfile } from '@/hooks/usePatientProfile';
 
 export default function Header({ initialPatient }: { initialPatient: any }) {
@@ -28,14 +28,7 @@ export default function Header({ initialPatient }: { initialPatient: any }) {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <Link href="/" className="relative p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors">
-                        <span className="sr-only">Notifications</span>
-                        <Bell className="w-5.5 h-5.5" />
-                        {/* Unread badge placeholder */}
-                        <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm">
-                            99
-                        </span>
-                    </Link>
+                    <NotificationDropdown />
 
                     <div className="flex items-center gap-3 pl-4 border-l border-gray-200 dark:border-gray-800">
                         {activePatient ? (
