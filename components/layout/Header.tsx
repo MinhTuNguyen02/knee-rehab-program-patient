@@ -18,13 +18,13 @@ export default function Header({ initialPatient }: { initialPatient: any }) {
                         <div className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center font-bold shadow-sm active:scale-95 transition-transform">
                             K
                         </div>
-                        <span className="font-bold text-lg tracking-tight hidden sm:inline-block text-primary">KRPS</span>
+                        <span className="font-bold text-3xl tracking-tight hidden sm:inline-block text-primary">KRPS</span>
                     </Link>
-                    {activePatient && (
+                    {/* {activePatient && (
                         <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 animate-fade-in">
                             Hi, {activePatient.firstName}
                         </span>
-                    )}
+                    )} */}
                 </div>
 
                 <div className="flex items-center gap-4">

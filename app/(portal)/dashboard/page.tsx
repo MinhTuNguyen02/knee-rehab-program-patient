@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { usePatientProfile } from '@/hooks/usePatientProfile';
 import { useAssessmentHistory } from '@/hooks/useAssessmentHistory';
 import Link from 'next/link';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatRelativeTime } from '@/lib/utils';
 import { ArrowRight, MessageCircle, UserCircle, Activity, ChevronRight, Calendar, AlertCircle } from 'lucide-react';
 import MiniTrendChart from '@/components/charts/MiniTrendChart';
 import OnboardingWalkthrough from '@/components/features/OnboardingWalkthrough';
@@ -121,6 +121,23 @@ export default function DashboardPage() {
         };
     }
 
+    const getTrendDescription = () => {
+        if (recentAssessments.length < 2) {
+            return 'Track your last 5 assessment scores';
+        }
+        const currentScore = recentAssessments[0].score;
+        const prevScore = recentAssessments[1].score;
+        const diff = currentScore - prevScore;
+
+        if (diff > 0) {
+            return `Knee health is improving (+${diff.toFixed(1)} points since last assessment)`;
+        } else if (diff < 0) {
+            return `Knee health has declined (${diff.toFixed(1)} points since last assessment)`;
+        } else {
+            return `Knee health remains stable at ${currentScore.toFixed(1)} points`;
+        }
+    };
+
     if (profileLoading || (historyLoading && assessments.length === 0)) {
         return (
             <div className="pb-12 max-w-6xl mx-auto flex flex-col items-center justify-center min-h-[50vh]">
@@ -164,7 +181,7 @@ export default function DashboardPage() {
                         <div className="relative z-10 flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
                             <div className="space-y-4">
                                 <div>
-                                    <span className="text-xs font-semibold tracking-wider text-gray-400 dark:text-gray-500 uppercase">
+                                    <span className="text-xs font-semibold tracking-wider text-gray-450 dark:text-gray-400 uppercase">
                                         Latest Assessment Result
                                     </span>
                                     {latest ? (
@@ -191,8 +208,8 @@ export default function DashboardPage() {
 
                                 {latest && (
                                     <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                                        <Calendar className="w-4 h-4 text-gray-400" />
-                                        <span>Last assessed: {formatDate(latest.createdAt)}</span>
+                                        <Calendar className="w-4 h-4 text-gray-450 dark:text-gray-500" />
+                                        <span>Last assessed: {formatRelativeTime(latest.createdAt)}</span>
                                     </div>
                                 )}
                             </div>
@@ -220,10 +237,10 @@ export default function DashboardPage() {
                         <div className="flex justify-between items-center mb-6">
                             <div>
                                 <h3 className="text-base font-bold text-gray-800 dark:text-gray-100">Score Trend</h3>
-                                <p className="text-xs text-gray-400 dark:text-gray-500">Track your last 5 assessment scores</p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500">{getTrendDescription()}</p>
                             </div>
                             {trendData.length > 1 && (
-                                <Link href="/history" className="text-sm md:text-base font-semibold text-primary hover:text-primary-hover flex items-center gap-1">
+                                <Link href="/history" className="text-sm md:text-base font-semibold text-primary hover:text-primary-hover flex items-center gap-1 hidden sm:flex">
                                     Full history <ChevronRight className="w-4.5 h-4.5" />
                                 </Link>
                             )}

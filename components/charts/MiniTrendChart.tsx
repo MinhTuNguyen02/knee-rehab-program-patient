@@ -161,7 +161,7 @@ export default function MiniTrendChart({ assessments }: MiniTrendChartProps) {
                                     x={p.x}
                                     y={chartHeight - 10}
                                     textAnchor="middle"
-                                    className="text-[10px] font-medium fill-gray-400 dark:fill-gray-500"
+                                    className="text-[10px] font-medium fill-gray-400 dark:fill-gray-500 hidden md:block"
                                 >
                                     {p.dateStr}
                                 </text>

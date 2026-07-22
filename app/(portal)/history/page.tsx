@@ -107,6 +107,7 @@ export default function HistoryPage() {
             <div className="bg-white dark:bg-gray-900 border border-gray-150 dark:border-gray-800 rounded-3xl overflow-hidden shadow-sm">
                 <div className="p-6 border-b border-gray-150 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-900/25">
                     <h3 className="text-sm font-bold text-gray-850 dark:text-gray-200 uppercase tracking-wider">Assessment Log</h3>
+                    <p className="text-sm text-gray-400 dark:text-gray-500 block sm:hidden">Tap on the row to view detailed results</p>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -118,7 +119,7 @@ export default function HistoryPage() {
                                 <th className="px-6 py-4 font-semibold">Zone</th>
                                 <th className="px-6 py-4 font-semibold hidden sm:table-cell">Pain</th>
                                 <th className="px-6 py-4 font-semibold hidden sm:table-cell">Function</th>
-                                <th className="px-6 py-4 font-semibold text-right">Details</th>
+                                <th className="px-6 py-4 font-semibold hidden sm:table-cell text-right">Details</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -173,7 +174,7 @@ export default function HistoryPage() {
                                                 <td className="px-6 py-4 whitespace-nowrap text-gray-500 dark:text-gray-400 hidden sm:table-cell">
                                                     {assessment.functionScore}/10
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-right text-gray-400 dark:text-gray-500">
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-gray-400 dark:text-gray-500 hidden sm:table-cell">
                                                     {isExpanded ? (
                                                         <ChevronUp className="w-5 h-5 inline-block text-primary" />
                                                     ) : (
@@ -267,12 +268,12 @@ export default function HistoryPage() {
                                                             </div>
 
                                                             {/* Medical Disclaimer */}
-                                                            <div className="p-4 bg-gray-50 dark:bg-gray-900/60 rounded-xl border border-gray-100 dark:border-gray-800 flex gap-2.5 items-start">
+                                                            {/* <div className="p-4 bg-gray-50 dark:bg-gray-900/60 rounded-xl border border-gray-100 dark:border-gray-800 flex gap-2.5 items-start">
                                                                 <ShieldAlert className="w-4.5 h-4.5 text-gray-400 shrink-0 mt-0.5" />
                                                                 <p className="text-xs text-gray-500 dark:text-gray-450 leading-relaxed">
                                                                     <strong>Disclaimer:</strong> The KRPS Score is an educational assessment tool based on self-reported metrics and does not replace medical diagnostics or assessment by a healthcare professional. Always consult a physician for individual health decisions.
                                                                 </p>
-                                                            </div>
+                                                            </div> */}
                                                         </div>
                                                     </td>
                                                 </tr>

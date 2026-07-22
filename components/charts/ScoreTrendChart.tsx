@@ -155,40 +155,211 @@ export default function ScoreTrendChart({ assessments }: ScoreTrendChartProps) {
             ) : trendData.length === 1 ? (
                 <div className="space-y-6">
                     {/* SVG with single dot taking full width */}
-                    <div className="relative border border-gray-100 dark:border-gray-800 rounded-2xl p-6 bg-gray-50/30 dark:bg-gray-900/30 overflow-visible">
-                        <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-auto overflow-visible">
-                            {/* Grid lines */}
+                    <div className="relative border border-gray-100 dark:border-gray-800 rounded-2xl p-6 bg-gray-50/30 dark:bg-gray-900/30 overflow-x-auto pb-4 scrollbar-thin">
+                        <div className="min-w-[600px] w-full">
+                            <svg
+                                viewBox={`0 -90 ${chartWidth} ${chartHeight + 90}`}
+                                className="w-full h-auto overflow-visible"
+                                onClick={() => setHoveredIndex(null)}
+                            >
+                                {/* Grid lines */}
+                                {yTicks.map((tick, i) => {
+                                    const yAxisHeight = chartHeight - paddingYTop - paddingYBottom;
+                                    const y = chartHeight - paddingYBottom - ((tick - minScore) / (maxScore - minScore)) * yAxisHeight;
+                                    return (
+                                        <g key={i}>
+                                            <line x1={paddingX} y1={y} x2={chartWidth - paddingX} y2={y} stroke="currentColor" className="text-gray-100 dark:text-gray-800/20" />
+                                            <text x={paddingX - 10} y={y + 4} textAnchor="end" className="text-[10px] font-medium fill-gray-400 dark:fill-gray-500">
+                                                {tick.toFixed(0)}
+                                            </text>
+                                        </g>
+                                    );
+                                })}
+                                {/* Center point */}
+                                {chartPoints.map((p, index) => (
+                                    <g key={index}
+                                        onMouseEnter={() => setHoveredIndex(index)}
+                                        onMouseLeave={() => setHoveredIndex(null)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setHoveredIndex(hoveredIndex === index ? null : index)
+                                        }}
+                                        className="cursor-pointer"
+                                    >
+                                        <circle cx={p.x} cy={p.y} r="16" fill={getZoneColorHex(p.zone)} opacity="0.25"
+                                            className={`transition-opacity duration-200 ${hoveredIndex === index ? 'opacity-25' : 'opacity-0'}`}
+                                        />
+                                        <circle cx={p.x} cy={p.y} r="8" fill="#FFFFFF" stroke={getZoneColorHex(p.zone)} strokeWidth="4.5" />
+                                        <text x={p.x} y={p.y + 26} textAnchor="middle" className="text-[11px] font-bold fill-gray-800 dark:fill-gray-200">
+                                            Score: {p.score.toFixed(1)}
+                                        </text>
+                                        <text x={p.x} y={chartHeight - 10} textAnchor="middle" className="text-[10px] font-medium fill-gray-400 dark:fill-gray-500">
+                                            {p.dateStr}
+                                        </text>
+                                    </g>
+                                ))}
+
+                                {/* Active Tooltip rendering */}
+                                {hoveredIndex !== null && chartPoints[hoveredIndex] && (() => {
+                                    const p = chartPoints[hoveredIndex];
+                                    // Constrain tooltip within bounds horizontally
+                                    const tooltipWidth = 140;
+                                    const tooltipHeight = 85;
+                                    const shiftX = p.x < tooltipWidth / 2 + 10
+                                        ? (tooltipWidth / 2 + 10 - p.x)
+                                        : p.x > chartWidth - tooltipWidth / 2 - 10
+                                            ? (chartWidth - tooltipWidth / 2 - 10 - p.x)
+                                            : 0;
+
+                                    const tooltipX = p.x + shiftX;
+                                    const tooltipY = p.y - tooltipHeight - 10;
+
+                                    return (
+                                        <g transform={`translate(${tooltipX}, ${tooltipY})`} className="pointer-events-none drop-shadow-md">
+                                            <rect
+                                                x={-tooltipWidth / 2}
+                                                y="0"
+                                                width={tooltipWidth}
+                                                height={tooltipHeight}
+                                                rx="10"
+                                                fill="#1E293B"
+                                                className="fill-slate-900/95 dark:fill-slate-950/95"
+                                            />
+                                            <text fill="#FFFFFF" className="text-[10px] font-medium" textAnchor="middle">
+                                                <tspan x="0" dy="16" fontWeight="bold" fill="#38BDF8">{p.dateStr}</tspan>
+                                                <tspan x="0" dy="16" fontWeight="bold" fontSize="11" fill="#FFFFFF">Score: {p.score.toFixed(1)}</tspan>
+                                                <tspan x="0" dy="14" fill="#94A3B8">Zone: {getZoneName(p.zone)}</tspan>
+                                                <tspan x="0" dy="14" fill="#F87171">Pain: {p.pain}/10 | Func: {p.functionScore}/10</tspan>
+                                            </text>
+                                            {/* Small arrow down */}
+                                            <polygon
+                                                points={`${-shiftX - 5},${tooltipHeight} ${-shiftX + 5},${tooltipHeight} ${-shiftX},${tooltipHeight + 5}`}
+                                                fill="#1E293B"
+                                                className="fill-slate-900/95 dark:fill-slate-950/95"
+                                            />
+                                        </g>
+                                    );
+                                })()}
+                            </svg>
+                        </div>
+                    </div>
+
+                    {/* Guidance Box and Button below full width chart */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                        <div className="md:col-span-2 p-5 rounded-2xl bg-primary/5 border border-primary/10 space-y-2">
+                            <h4 className="font-bold text-sm text-primary">Need more data to unlock your trend</h4>
+                            <p className="text-sm text-gray-550 leading-relaxed dark:text-gray-405">
+                                Completing a second knee rehabilitation progress assessment allows the system to build your first trend line. This helps you track changes in your knee mobility and pain indicators.
+                            </p>
+                        </div>
+                        <div>
+                            <a
+                                href={process.env.NEXT_PUBLIC_ASSESS_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex justify-center items-center py-3.5 px-4 w-full rounded-xl shadow-sm text-sm font-bold text-white bg-primary hover:bg-primary-hover active:scale-[0.98] transition-transform text-center"
+                            >
+                                Retake Assessment
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <div className="relative border border-gray-100 dark:border-gray-800 rounded-2xl p-4 bg-gray-50/30 dark:bg-gray-900/30 overflow-x-auto pb-4 scrollbar-thin">
+                    <div className="min-w-[600px] w-full">
+                        <svg
+                            viewBox={`0 -90 ${chartWidth} ${chartHeight + 90}`}
+                            className="w-full h-auto overflow-visible"
+                            onClick={() => setHoveredIndex(null)}
+                        >
+                            <defs>
+                                <linearGradient id="full-chart-gradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.15" />
+                                    <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.0" />
+                                </linearGradient>
+                            </defs>
+
+                            {/* Y-axis Ticks & Horizontal Grid lines */}
                             {yTicks.map((tick, i) => {
                                 const yAxisHeight = chartHeight - paddingYTop - paddingYBottom;
                                 const y = chartHeight - paddingYBottom - ((tick - minScore) / (maxScore - minScore)) * yAxisHeight;
                                 return (
                                     <g key={i}>
-                                        <line x1={paddingX} y1={y} x2={chartWidth - paddingX} y2={y} stroke="currentColor" className="text-gray-100 dark:text-gray-800/20" />
-                                        <text x={paddingX - 10} y={y + 4} textAnchor="end" className="text-[10px] font-medium fill-gray-400 dark:fill-gray-500">
+                                        <line x1={paddingX} y1={y} x2={chartWidth - paddingX} y2={y} stroke="currentColor" className="text-gray-100 dark:text-gray-800/20" strokeDasharray="3 3" />
+                                        <text x={paddingX - 12} y={y + 4} textAnchor="end" className="text-[10px] font-medium fill-gray-400 dark:fill-gray-500">
                                             {tick.toFixed(0)}
                                         </text>
                                     </g>
                                 );
                             })}
-                            {/* Center point */}
+
+                            {/* Area Fill */}
+                            {areaPath && (
+                                <path d={areaPath} fill="url(#full-chart-gradient)" />
+                            )}
+
+                            {/* Trend Line */}
+                            {pointsPath && (
+                                <path
+                                    d={pointsPath}
+                                    fill="none"
+                                    stroke="var(--primary)"
+                                    strokeWidth="3.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+                            )}
+
+                            {/* Points */}
                             {chartPoints.map((p, index) => (
                                 <g key={index}
                                     onMouseEnter={() => setHoveredIndex(index)}
                                     onMouseLeave={() => setHoveredIndex(null)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setHoveredIndex(hoveredIndex === index ? null : index)
+                                    }}
                                     className="cursor-pointer"
                                 >
-                                    <circle cx={p.x} cy={p.y} r="16" fill={getZoneColorHex(p.zone)} opacity="0.25"
+                                    {/* Glow hover background */}
+                                    <circle
+                                        cx={p.x}
+                                        cy={p.y}
+                                        r="8.5"
+                                        fill={getZoneColorHex(p.zone)}
                                         className={`transition-opacity duration-200 ${hoveredIndex === index ? 'opacity-25' : 'opacity-0'}`}
                                     />
-                                    <circle cx={p.x} cy={p.y} r="8" fill="#FFFFFF" stroke={getZoneColorHex(p.zone)} strokeWidth="4.5" />
-                                    <text x={p.x} y={p.y + 26} textAnchor="middle" className="text-[11px] font-bold fill-gray-800 dark:fill-gray-200">
-                                        Score: {p.score.toFixed(1)}
-                                    </text>
-                                    <text x={p.x} y={chartHeight - 10} textAnchor="middle" className="text-[10px] font-medium fill-gray-400 dark:fill-gray-500">
-                                        {p.dateStr}
-                                    </text>
+                                    {/* Center white dot with colored border */}
+                                    <circle
+                                        cx={p.x}
+                                        cy={p.y}
+                                        r="5.5"
+                                        fill="#FFFFFF"
+                                        stroke={getZoneColorHex(p.zone)}
+                                        strokeWidth="3"
+                                        className="transition-transform duration-200"
+                                    />
                                 </g>
                             ))}
+
+                            {/* Axis Labels */}
+                            {chartPoints.map((p, index) => {
+                                // Only show date labels for subset of points if there are too many (max 5)
+                                const interval = Math.max(1, Math.ceil(chartPoints.length / 5));
+                                if (index % interval !== 0 && index !== chartPoints.length - 1) return null;
+
+                                return (
+                                    <text
+                                        key={index}
+                                        x={p.x}
+                                        y={chartHeight - 10}
+                                        textAnchor="middle"
+                                        className="text-[10px] font-semibold fill-gray-450 dark:fill-gray-500"
+                                    >
+                                        {p.dateStr}
+                                    </text>
+                                );
+                            })}
 
                             {/* Active Tooltip rendering */}
                             {hoveredIndex !== null && chartPoints[hoveredIndex] && (() => {
@@ -233,157 +404,6 @@ export default function ScoreTrendChart({ assessments }: ScoreTrendChartProps) {
                             })()}
                         </svg>
                     </div>
-
-                    {/* Guidance Box and Button below full width chart */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                        <div className="md:col-span-2 p-5 rounded-2xl bg-primary/5 border border-primary/10 space-y-2">
-                            <h4 className="font-bold text-sm text-primary">Need more data to unlock your trend</h4>
-                            <p className="text-sm text-gray-550 leading-relaxed dark:text-gray-405">
-                                Completing a second knee rehabilitation progress assessment allows the system to build your first trend line. This helps you track changes in your knee mobility and pain indicators.
-                            </p>
-                        </div>
-                        <div>
-                            <a
-                                href={process.env.NEXT_PUBLIC_ASSESS_URL}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex justify-center items-center py-3.5 px-4 w-full rounded-xl shadow-sm text-sm font-bold text-white bg-primary hover:bg-primary-hover active:scale-[0.98] transition-transform text-center"
-                            >
-                                Retake Assessment
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                <div className="relative border border-gray-100 dark:border-gray-800 rounded-2xl p-4 bg-gray-50/30 dark:bg-gray-900/30 overflow-visible">
-                    <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-auto overflow-visible">
-                        <defs>
-                            <linearGradient id="full-chart-gradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.15" />
-                                <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.0" />
-                            </linearGradient>
-                        </defs>
-
-                        {/* Y-axis Ticks & Horizontal Grid lines */}
-                        {yTicks.map((tick, i) => {
-                            const yAxisHeight = chartHeight - paddingYTop - paddingYBottom;
-                            const y = chartHeight - paddingYBottom - ((tick - minScore) / (maxScore - minScore)) * yAxisHeight;
-                            return (
-                                <g key={i}>
-                                    <line x1={paddingX} y1={y} x2={chartWidth - paddingX} y2={y} stroke="currentColor" className="text-gray-100 dark:text-gray-800/20" strokeDasharray="3 3" />
-                                    <text x={paddingX - 12} y={y + 4} textAnchor="end" className="text-[10px] font-medium fill-gray-400 dark:fill-gray-500">
-                                        {tick.toFixed(0)}
-                                    </text>
-                                </g>
-                            );
-                        })}
-
-                        {/* Area Fill */}
-                        {areaPath && (
-                            <path d={areaPath} fill="url(#full-chart-gradient)" />
-                        )}
-
-                        {/* Trend Line */}
-                        {pointsPath && (
-                            <path
-                                d={pointsPath}
-                                fill="none"
-                                stroke="var(--primary)"
-                                strokeWidth="3.5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                        )}
-
-                        {/* Points */}
-                        {chartPoints.map((p, index) => (
-                            <g key={index}
-                                onMouseEnter={() => setHoveredIndex(index)}
-                                onMouseLeave={() => setHoveredIndex(null)}
-                                className="cursor-pointer"
-                            >
-                                {/* Glow hover background */}
-                                <circle
-                                    cx={p.x}
-                                    cy={p.y}
-                                    r="8.5"
-                                    fill={getZoneColorHex(p.zone)}
-                                    className={`transition-opacity duration-200 ${hoveredIndex === index ? 'opacity-25' : 'opacity-0'}`}
-                                />
-                                {/* Center white dot with colored border */}
-                                <circle
-                                    cx={p.x}
-                                    cy={p.y}
-                                    r="5.5"
-                                    fill="#FFFFFF"
-                                    stroke={getZoneColorHex(p.zone)}
-                                    strokeWidth="3"
-                                    className="transition-transform duration-200"
-                                />
-                            </g>
-                        ))}
-
-                        {/* Axis Labels */}
-                        {chartPoints.map((p, index) => {
-                            // Only show date labels for subset of points if there are too many (max 5)
-                            const interval = Math.max(1, Math.ceil(chartPoints.length / 5));
-                            if (index % interval !== 0 && index !== chartPoints.length - 1) return null;
-
-                            return (
-                                <text
-                                    key={index}
-                                    x={p.x}
-                                    y={chartHeight - 10}
-                                    textAnchor="middle"
-                                    className="text-[10px] font-semibold fill-gray-450 dark:fill-gray-500"
-                                >
-                                    {p.dateStr}
-                                </text>
-                            );
-                        })}
-
-                        {/* Active Tooltip rendering */}
-                        {hoveredIndex !== null && chartPoints[hoveredIndex] && (() => {
-                            const p = chartPoints[hoveredIndex];
-                            // Constrain tooltip within bounds horizontally
-                            const tooltipWidth = 140;
-                            const tooltipHeight = 85;
-                            const shiftX = p.x < tooltipWidth / 2 + 10
-                                ? (tooltipWidth / 2 + 10 - p.x)
-                                : p.x > chartWidth - tooltipWidth / 2 - 10
-                                    ? (chartWidth - tooltipWidth / 2 - 10 - p.x)
-                                    : 0;
-
-                            const tooltipX = p.x + shiftX;
-                            const tooltipY = p.y - tooltipHeight - 10;
-
-                            return (
-                                <g transform={`translate(${tooltipX}, ${tooltipY})`} className="pointer-events-none drop-shadow-md">
-                                    <rect
-                                        x={-tooltipWidth / 2}
-                                        y="0"
-                                        width={tooltipWidth}
-                                        height={tooltipHeight}
-                                        rx="10"
-                                        fill="#1E293B"
-                                        className="fill-slate-900/95 dark:fill-slate-950/95"
-                                    />
-                                    <text fill="#FFFFFF" className="text-[10px] font-medium" textAnchor="middle">
-                                        <tspan x="0" dy="16" fontWeight="bold" fill="#38BDF8">{p.dateStr}</tspan>
-                                        <tspan x="0" dy="16" fontWeight="bold" fontSize="11" fill="#FFFFFF">Score: {p.score.toFixed(1)}</tspan>
-                                        <tspan x="0" dy="14" fill="#94A3B8">Zone: {getZoneName(p.zone)}</tspan>
-                                        <tspan x="0" dy="14" fill="#F87171">Pain: {p.pain}/10 | Func: {p.functionScore}/10</tspan>
-                                    </text>
-                                    {/* Small arrow down */}
-                                    <polygon
-                                        points={`${-shiftX - 5},${tooltipHeight} ${-shiftX + 5},${tooltipHeight} ${-shiftX},${tooltipHeight + 5}`}
-                                        fill="#1E293B"
-                                        className="fill-slate-900/95 dark:fill-slate-950/95"
-                                    />
-                                </g>
-                            );
-                        })()}
-                    </svg>
                 </div>
             )}
         </div>
